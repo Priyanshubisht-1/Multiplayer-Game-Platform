@@ -94,15 +94,15 @@ The system follows an \*\*Authoritative Server Model\*\*.
 
 Client (Phaser)
 
-&nbsp;     ↓
+       ↓
 
 WebSocket (Socket.IO)
 
-&nbsp;     ↓
+       ↓
 
 Node.js Server
 
-&nbsp;     ↓
+       ↓
 
 Game State Manager
 
@@ -164,13 +164,13 @@ realtime-multiplayer-platform/
 
 client/
 
-&nbsp;├── src/
+      ├── src/
 
-&nbsp;│   ├── game/
+      │   ├── game/
 
-&nbsp;│   ├── network/
+      │   ├── network/
 
-&nbsp;│   └── main.js
+      │   └── main.js
 
 ```
 
@@ -184,15 +184,15 @@ client/
 
 server/
 
-&nbsp;├── src/
+      ├── src/
 
-&nbsp;│   ├── sockets/
+      │   ├── sockets/
 
-&nbsp;│   ├── rooms/
+      │   ├── rooms/
 
-&nbsp;│   ├── game/
+      │   ├── game/
 
-&nbsp;│   └── index.js
+      │   └── index.js
 
 ```
 
