@@ -12,7 +12,7 @@
 
 
 
-The \*\*Real-Time Multiplayer Gaming Platform\*\* is a 🌐 web-based system that allows users to create or join game rooms and play real-time interactive games using synchronized 🔄 WebSocket communication.
+The \*\*WebSocket-Based Modular Multiplayer Game Platform\*\* is a 🌐 web-based system that allows users to create or join game rooms and play real-time interactive games using synchronized 🔄 WebSocket communication.
 
 
 

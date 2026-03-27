@@ -10,7 +10,7 @@
 
 
 
-\# 🚀 Real-Time Multiplayer Gaming Platform
+\# 🚀 WebSocket-Based Modular Multiplayer Game Platform
 
 
 
