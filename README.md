@@ -1,4 +1,5 @@
 # WebSocket-Based Modular Multiplayer Game Platform
+
 A browser-based multiplayer game platform where one device acts as the game host (displayed on a screen) and other devices act as controllers (phones, tablets). Games run in real time over WebSockets.
 
 ---
@@ -157,28 +158,35 @@ http://<your-ip>:5173/?mode=controller
 Create `server/src/games/<name>/<Name>Game.js` extending `BaseGame`:
 
 ```js
-const BaseGame = require("../base/BaseGame")
+const BaseGame = require("../base/BaseGame");
 
 class MyGame extends BaseGame {
-    init() {
-        // Set up this.state — called before start()
-        this.state = { players: {}, /* ... */ }
-        Object.keys(this.room.players).forEach(id => {
-            this.state.players[id] = { x: 100, y: 100, vx: 0, vy: 0, speed: 200, lastInputTime: 0 }
-        })
-    }
+  init() {
+    // Set up this.state — called before start()
+    this.state = { players: {} /* ... */ };
+    Object.keys(this.room.players).forEach((id) => {
+      this.state.players[id] = {
+        x: 100,
+        y: 100,
+        vx: 0,
+        vy: 0,
+        speed: 200,
+        lastInputTime: 0,
+      };
+    });
+  }
 
-    update(delta) {
-        if (!this.isRunning()) return
-        // Move players, check collisions, etc.
-    }
+  update(delta) {
+    if (!this.isRunning()) return;
+    // Move players, check collisions, etc.
+  }
 
-    handleInput(playerId, input) {
-        // Mutate this.state.players[playerId] based on input
-    }
+  handleInput(playerId, input) {
+    // Mutate this.state.players[playerId] based on input
+  }
 }
 
-module.exports = MyGame
+module.exports = MyGame;
 ```
 
 The file name must follow the pattern `<Name>Game.js` where `<Name>` is the capitalised game id (e.g. `tag` → `TagGame.js`).
@@ -189,10 +197,16 @@ Create `client/src/host/games/<name>Host.js`:
 
 ```js
 export function createHostRenderer(scene) {
-    function syncState(state) { /* update Phaser objects from server state */ }
-    function update(delta)    { /* interpolation, animations */ }
-    function destroy()        { /* clean up Phaser objects */ }
-    return { syncState, update, destroy }
+  function syncState(state) {
+    /* update Phaser objects from server state */
+  }
+  function update(delta) {
+    /* interpolation, animations */
+  }
+  function destroy() {
+    /* clean up Phaser objects */
+  }
+  return { syncState, update, destroy };
 }
 ```
 
@@ -201,11 +215,11 @@ export function createHostRenderer(scene) {
 Create `client/src/controller/games/<name>Controller.js`:
 
 ```js
-import socket from "../../core/socket.js"
-import EVENTS from "../../shared/events.js"
+import socket from "../../core/socket.js";
+import EVENTS from "../../shared/events.js";
 
 export function mountController() {
-    // Render buttons into #app and emit EVENTS.INPUT.MOVE / EVENTS.INPUT.ACTION
+  // Render buttons into #app and emit EVENTS.INPUT.MOVE / EVENTS.INPUT.ACTION
 }
 ```
 
@@ -237,14 +251,14 @@ The `GameLoader` and `ControllerLoader` / `HostLoader` discover files by convent
 
 ## Available Games
 
-| ID    | Name      | Status      |
-|-------|-----------|-------------|
-| `tag` | Tag Game  | Implemented |
+| ID      | Name         | Status      |
+| ------- | ------------ | ----------- |
+| `racer` | Jungle Racer | Implemented |
 
 ---
 
 ## Environment Variables
 
-| Variable | Default | Description              |
-|----------|---------|--------------------------|
-| `PORT`   | `3000`  | Server listening port    |
+| Variable | Default | Description           |
+| -------- | ------- | --------------------- |
+| `PORT`   | `3000`  | Server listening port |
