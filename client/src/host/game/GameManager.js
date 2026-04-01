@@ -1,65 +1,68 @@
-import { loadHostModule, clearActiveHostModule } from "../HostLoader.js"
+import { loadHostModule, clearActiveHostModule } from "../HostLoader.js";
 
 class GameManager {
-    constructor() {
-        this.scene = null
-        this.currentGame = null
-        this.pendingGame = null
-        this.readyResolvers = []
+  constructor() {
+    this.scene = null;
+    this.currentGame = null;
+    this.pendingGame = null;
+    this.readyResolvers = [];
+  }
+
+  setScene(scene) {
+    this.scene = scene;
+
+    // Resolve anything waiting for scene readiness
+    this.readyResolvers.forEach((resolve) => resolve(scene));
+    this.readyResolvers = [];
+
+    // Apply pending game if it exists
+    if (this.pendingGame) {
+      const game = this.pendingGame;
+      this.pendingGame = null;
+      this.setGame(game);
+    }
+  }
+
+  waitForScene() {
+    if (this.scene) {
+      return Promise.resolve(this.scene);
     }
 
-    setScene(scene) {
-        this.scene = scene
+    return new Promise((resolve) => {
+      this.readyResolvers.push(resolve);
+    });
+  }
 
-        // Resolve anything waiting for scene readiness
-        this.readyResolvers.forEach(resolve => resolve(scene))
-        this.readyResolvers = []
-
-        // Apply pending game if it exists
-        if (this.pendingGame) {
-            const game = this.pendingGame
-            this.pendingGame = null
-            this.setGame(game)
-        }
+  async setGame(game) {
+    if (!this.scene) {
+      this.pendingGame = game;
+      return;
     }
 
-    waitForScene() {
-        if (this.scene) {
-            return Promise.resolve(this.scene)
-        }
-
-        return new Promise(resolve => {
-            this.readyResolvers.push(resolve)
-        })
+    if (this.currentGame === game) {
+      return;
     }
 
-    async setGame(game) {
-        if (!this.scene) {
-            this.pendingGame = game
-            return
-        }
+    this.currentGame = game;
 
-        if (this.currentGame === game) {
-            return
-        }
+    clearActiveHostModule();
 
-        this.currentGame = game
+    const renderer = await loadHostModule(game, this.scene);
+    await this.scene.setHostRenderer(renderer);
+  }
+  getActiveRenderer() {
+    return this.scene?.hostRenderer ?? null;
+  }
 
-        clearActiveHostModule()
+  updateState(state) {
+    if (!this.scene) return;
+    this.scene.syncState(state);
+  }
 
-        const renderer = await loadHostModule(game, this.scene)
-        await this.scene.setHostRenderer(renderer)
-    }
-
-    updateState(state) {
-        if (!this.scene) return
-        this.scene.syncState(state)
-    }
-
-    reset() {
-        this.currentGame = null
-        this.pendingGame = null
-    }
+  reset() {
+    this.currentGame = null;
+    this.pendingGame = null;
+  }
 }
 
-export default new GameManager()
+export default new GameManager();

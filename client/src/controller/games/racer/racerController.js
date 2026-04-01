@@ -1,5 +1,5 @@
-import socket from "../../core/socket.js";
-import EVENTS from "../../shared/events.js";
+import socket from "../../../core/socket.js";
+import EVENTS from "../../../shared/events.js";
 
 let currentDirection = null;
 let activePointerId = null;
@@ -25,11 +25,11 @@ export function mountController() {
   const playerColor = getPlayerColor();
 
   app.innerHTML = `
-    <div class="tag-controller-shell" style="--player-color: ${escapeHtml(playerColor)};">
-      <div class="tag-controller-card">
-        <div class="tag-controller-header">
-          <h2>Tag Controller</h2>
-          <p>Drag the joystick to move</p>
+    <div class="racer-controller-shell" style="--player-color: ${escapeHtml(playerColor)};">
+      <div class="racer-controller-card">
+        <div class="racer-controller-header">
+          <h2>Racer Controller</h2>
+          <p>Drag the joystick to Drive</p>
         </div>
 
         <div class="joystick-wrap">
@@ -38,7 +38,7 @@ export function mountController() {
           </div>
         </div>
 
-        <div class="tag-controller-status">
+        <div class="racer-controller-status">
           <span id="direction-label">Direction: Idle</span>
         </div>
       </div>
@@ -235,12 +235,12 @@ function escapeHtml(value) {
 }
 
 function mountStyles() {
-  if (document.getElementById("tag-joystick-styles")) return;
+  if (document.getElementById("racer-joystick-styles")) return;
 
   const style = document.createElement("style");
-  style.id = "tag-joystick-styles";
+  style.id = "racer-joystick-styles";
   style.textContent = `
-    .tag-controller-shell {
+    .racer-controller-shell {
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -251,7 +251,7 @@ function mountStyles() {
       color: #f8fafc;
     }
 
-    .tag-controller-card {
+    .racer-controller-card {
       width: 100%;
       max-width: 420px;
       background: rgba(15, 23, 42, 0.78);
@@ -263,12 +263,12 @@ function mountStyles() {
       text-align: center;
     }
 
-    .tag-controller-header h2 {
+    .racer-controller-header h2 {
       margin: 0 0 8px;
       font-size: 1.8rem;
     }
 
-    .tag-controller-header p {
+    .racer-controller-header p {
       margin: 0;
       color: #cbd5e1;
       font-size: 0.98rem;
@@ -344,7 +344,7 @@ function mountStyles() {
       transition: transform 0.04s linear;
     }
 
-    .tag-controller-status {
+    .racer-controller-status {
       margin-top: 24px;
       font-size: 1rem;
       font-weight: 700;
@@ -352,7 +352,7 @@ function mountStyles() {
     }
 
     @media (max-width: 480px) {
-      .tag-controller-card {
+      .racer-controller-card {
         padding: 18px;
         border-radius: 20px;
       }

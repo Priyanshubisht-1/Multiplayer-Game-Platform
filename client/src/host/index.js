@@ -57,20 +57,6 @@ export function mountHostGame() {
                         </div>
 
                         <div class="host-game-info-grid">
-                            <div class="host-info-row">
-                                <span class="host-info-label">Current Game</span>
-                                <strong id="host-current-game">Tag</strong>
-                            </div>
-
-                            <div class="host-info-row">
-                                <span class="host-info-label">Tagger</span>
-                                <strong id="host-current-tagger">--</strong>
-                            </div>
-
-                            <div class="host-info-row">
-                                <span class="host-info-label">Phase</span>
-                                <strong id="host-current-phase">Running</strong>
-                            </div>
                             <button id="host-return-btn" class="host-return-btn">
                                 Return to Lobby
                             </button>
@@ -113,6 +99,8 @@ export function mountHostGame() {
       parent: "phaser-root",
       backgroundColor: "#222222",
       scene: [MainScene],
+      pixelArt: true,
+      roundPixels: true,
     };
 
     gameInstance = new Phaser.Game(config);
@@ -136,7 +124,6 @@ function updateHostGameSidebar(state) {
   const roomIdEl = document.getElementById("host-room-id");
   const playerCountEl = document.getElementById("host-player-count");
   const playerListEl = document.getElementById("host-player-list");
-  const taggerEl = document.getElementById("host-current-tagger");
   const phaseEl = document.getElementById("host-current-phase");
   const statusEl = document.getElementById("host-game-status");
 
@@ -149,10 +136,6 @@ function updateHostGameSidebar(state) {
 
   if (playerCountEl) {
     playerCountEl.textContent = String(playerCount);
-  }
-
-  if (taggerEl) {
-    taggerEl.textContent = state.tagger || "--";
   }
 
   if (phaseEl) {
@@ -174,20 +157,16 @@ function updateHostGameSidebar(state) {
 
     playerListEl.innerHTML = players
       .map(([id, data]) => {
-        const isTagger = id === state.tagger;
         const avatarColor = escapeHtml(data.color || "#3b82f6");
         const initial = escapeHtml((data.name || id).charAt(0).toUpperCase());
 
         return `
-      <li class="host-player-item ${isTagger ? "is-tagger" : ""}">
+      <li class="host-player-item">
         <div class="host-player-avatar" style="background:${avatarColor}">
           ${initial}
         </div>
         <div class="host-player-meta">
           <span class="host-player-name">${escapeHtml(data.name || id)}</span>
-          <span class="host-player-role">
-            ${isTagger ? "Tagger" : "Runner"}
-          </span>
         </div>
       </li>
     `;
@@ -365,10 +344,6 @@ function mountHostGameStyles() {
             border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .host-player-item.is-tagger {
-            border-color: rgba(239, 68, 68, 0.35);
-            background: rgba(239, 68, 68, 0.12);
-        }
 
         .host-player-avatar {
             width: 42px;
@@ -393,11 +368,6 @@ function mountHostGameStyles() {
         .host-player-name {
             font-weight: 700;
             word-break: break-word;
-        }
-
-        .host-player-role {
-            color: #cbd5e1;
-            font-size: 0.9rem;
         }
 
         .host-player-empty {

@@ -1,7 +1,7 @@
-const controllerModules = import.meta.glob("./games/*Controller.js")
+const controllerModules = import.meta.glob("./games/**/*Controller.js")
 
 export async function mountControllerByGame(game) {
-    const path = `./games/${game}Controller.js`
+   const path = `./games/${game}/${game}Controller.js`;
     const loader = controllerModules[path]
 
     if (!loader) {

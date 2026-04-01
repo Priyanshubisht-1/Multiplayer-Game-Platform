@@ -10,7 +10,7 @@ function getPlayerId() {
 
   return playerId;
 }
-const socket = io("http://192.168.1.5:3000", {
+const socket = io("http://10.151.187.39:3000", {
   transports: ["websocket"],
   auth: {
     playerId: getPlayerId(),

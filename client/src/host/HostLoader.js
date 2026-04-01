@@ -1,33 +1,41 @@
-const hostModules = import.meta.glob("./games/*Host.js")
+const hostModules = import.meta.glob("./games/**/*Host.js");
 
-let activeHostModule = null
+let activeHostModule = null;
 
 export async function loadHostModule(game, scene) {
-    const path = `./games/${game}Host.js`
-    const loader = hostModules[path]
+  const path = `./games/${game}/${game}Host.js`;
+  const loader = hostModules[path];
 
-    if (!loader) {
-        throw new Error(`No host module found for game: ${game}`)
-    }
+  if (!loader) {
+    throw new Error(`No host module found for game: ${game}`);
+  }
 
-    const module = await loader()
+  const module = await loader();
 
-    if (!module || typeof module.createHostRenderer !== "function") {
-        throw new Error(`Invalid host module for game: ${game}`)
-    }
+  if (!module || typeof module.createHostRenderer !== "function") {
+    throw new Error(`Invalid host module for game: ${game}`);
+  }
 
-    activeHostModule = module.createHostRenderer(scene)
-    return activeHostModule
+  if (typeof module.preload === "function") {
+    module.preload(scene);
+    await new Promise((resolve) => {
+      scene.load.once("complete", resolve);
+      scene.load.start();
+    });
+  }
+
+  activeHostModule = module.createHostRenderer(scene);
+  return activeHostModule;
 }
 
 export function getActiveHostModule() {
-    return activeHostModule
+  return activeHostModule;
 }
 
 export function clearActiveHostModule() {
-    if (activeHostModule && typeof activeHostModule.destroy === "function") {
-        activeHostModule.destroy()
-    }
+  if (activeHostModule && typeof activeHostModule.destroy === "function") {
+    activeHostModule.destroy();
+  }
 
-    activeHostModule = null
+  activeHostModule = null;
 }

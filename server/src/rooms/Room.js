@@ -1,10 +1,10 @@
 const GameLoader = require("../core/GameLoader");
 const EVENTS = require("../shared/events");
 const COLORS = [
-  "#ef4444",
-  "#22c55e",
-  "#3b82f6",
-  "#f59e0b",
+  "#ff0000",
+  "#00ff00",
+  "#0000ff",
+  "#ffff00",
   "#a855f7",
   "#14b8a6",
 ];

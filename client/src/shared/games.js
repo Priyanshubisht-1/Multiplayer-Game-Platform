@@ -1,9 +1,12 @@
 const GAMES = [
   {
-    id: "tag",
-    name: "Tag Game",
+    id: "racer",
+    name: "Jungle Racer",
     minPlayers: 2,
-    maxPlayers: 6,
+    maxPlayers: 4,
+    emoji: "🏎️",
+    description:
+      "A 4-player top-down obstacle racer with checkpoint laps on the shared host screen.",
   },
 ];
 

@@ -17,10 +17,14 @@ export function renderLobby(lobby, isHost) {
   const connectedCount = connectedControllers.length;
   const selectedGameMeta = GAMES.find((g) => g.id === lobby.selectedGame);
 
+  const minPlayers = selectedGameMeta?.minPlayers || 1;
+  const maxPlayers = selectedGameMeta?.maxPlayers || Infinity;
+
   const canStart =
     isHost &&
     !!lobby.selectedGame &&
-    connectedCount >= 2 &&
+    connectedCount >= minPlayers &&
+    connectedCount <= maxPlayers &&
     lobby.status !== "running";
 
   const controllersHtml =
@@ -68,25 +72,24 @@ export function renderLobby(lobby, isHost) {
     const disabled = !isHost || lobby.status === "running";
 
     return `
-            <button
-                class="lobby-game-card ${isSelected ? "selected" : ""}"
-                data-game="${escapeHtml(game.id)}"
-                type="button"
-                ${disabled ? "disabled" : ""}
-            >
-                <div class="lobby-game-card-top">
-                    <span class="lobby-game-icon">${getGameEmoji(game.id)}</span>
-                    <span class="lobby-game-tag ${isSelected ? "selected" : ""}">
-                        ${isSelected ? "Selected" : "Available"}
-                    </span>
-                </div>
+    <button
+      class="lobby-game-card ${isSelected ? "selected" : ""}"
+      data-game="${escapeHtml(game.id)}"
+      type="button"
+      ${disabled ? "disabled" : ""}
+    >
+      <div class="lobby-game-card-top">
+        <span class="lobby-game-icon">${escapeHtml(game.emoji || "🎮")}</span>
+        <span class="lobby-game-tag ${isSelected ? "selected" : ""}">
+          ${isSelected ? "Selected" : "Available"}
+        </span>
+      </div>
 
-                <h4>${escapeHtml(game.name)}</h4>
-                <p>${escapeHtml(getGameDescription(game.id))}</p>
-            </button>
-        `;
+      <h4>${escapeHtml(game.name)}</h4>
+      <p>${escapeHtml(game.description || "A modular local multiplayer game for the shared host screen.")}</p>
+    </button>
+  `;
   }).join("");
-
   app.innerHTML = `
         <div class="lobby-shell">
             <section class="lobby-panel lobby-panel--main">
@@ -171,16 +174,18 @@ export function renderLobby(lobby, isHost) {
                                     </button>
 
                                     <p class="lobby-helper-text">
-                                        ${
-                                          !lobby.selectedGame
-                                            ? "Select a game before starting."
-                                            : connectedCount < 2
-                                              ? "At least 2 connected controllers are required to start."
-                                              : lobby.status === "running"
-                                                ? "The game is already running."
-                                                : "The room is ready to start."
-                                        }
-                                    </p>
+  ${
+    !lobby.selectedGame
+      ? "Select a game before starting."
+      : connectedCount < (selectedGameMeta?.minPlayers || 1)
+        ? `At least ${selectedGameMeta?.minPlayers || 1} connected controllers are required to start.`
+        : connectedCount > (selectedGameMeta?.maxPlayers || Infinity)
+          ? `Maximum ${selectedGameMeta?.maxPlayers} controllers allowed for this game.`
+          : lobby.status === "running"
+            ? "The game is already running."
+            : `Ready to start (${selectedGameMeta?.minPlayers || 1}-${selectedGameMeta?.maxPlayers || "∞"} players).`
+  }                                                   
+</p>
                                 </div>
                             `
                         : `
@@ -239,9 +244,21 @@ function attachHostHandlers(lobby, connectedCount, canStart) {
         return;
       }
 
-      if (connectedCount < 2) {
+      const selectedGameMeta = GAMES.find((g) => g.id === lobby.selectedGame);
+      const minPlayers = selectedGameMeta?.minPlayers || 1;
+      const maxPlayers = selectedGameMeta?.maxPlayers || Infinity;
+
+      if (connectedCount < minPlayers) {
         showLobbyMessage(
-          "At least 2 connected controllers must join first.",
+          `At least ${minPlayers} connected controllers must join first.`,
+          "error",
+        );
+        return;
+      }
+
+      if (connectedCount > maxPlayers) {
+        showLobbyMessage(
+          `Maximum ${maxPlayers} controllers allowed for this game.`,
           "error",
         );
         return;
@@ -712,24 +729,6 @@ function getStatusClass(status) {
   if (normalized === "starting") return "status-starting";
   if (normalized === "ended") return "status-ended";
   return "status-waiting";
-}
-
-function getGameEmoji(gameId) {
-  if (gameId === "tag") return "🏃";
-  if (gameId === "car") return "🏎️";
-  return "🎮";
-}
-
-function getGameDescription(gameId) {
-  if (gameId === "tag") {
-    return "Fast movement and chase gameplay controlled from connected devices.";
-  }
-
-  if (gameId === "car") {
-    return "Arcade-style driving controlled by mobile inputs on the main display.";
-  }
-
-  return "A modular local multiplayer game for the shared host screen.";
 }
 
 function escapeHtml(value) {
