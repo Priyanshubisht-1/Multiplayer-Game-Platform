@@ -1,10 +1,10 @@
 const GameLoader = require("../core/GameLoader");
 const EVENTS = require("../shared/events");
 const COLORS = [
-  "#ff0000",
-  "#00ff00",
-  "#0000ff",
-  "#ffff00",
+  "#ff0000", // red
+  "#00ff00", // green
+  "#0000ff", // blue
+  "#ffff00", // yellow
   "#a855f7",
   "#14b8a6",
 ];
@@ -48,6 +48,12 @@ class Room {
       }
 
       socket.join(this.id);
+
+      // Notify the active game so it can resume if paused
+      if (this.game && typeof this.game.onPlayerReconnected === "function") {
+        this.game.onPlayerReconnected(playerId);
+      }
+
       this.broadcastRoomUpdate();
       return;
     }
@@ -93,6 +99,11 @@ class Room {
 
     player.connected = false;
     socket.leave(this.id);
+
+    // Notify the active game so it can pause if needed
+    if (this.game && typeof this.game.onPlayerDisconnected === "function") {
+      this.game.onPlayerDisconnected(playerId);
+    }
 
     this.broadcastRoomUpdate();
   }
