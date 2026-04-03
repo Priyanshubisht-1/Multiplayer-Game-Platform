@@ -32,5 +32,5 @@ registerConnections(io, roomManager)
 gameLoop.start()
 
 server.listen(PORT,"0.0.0.0", () => {
-    console.log(`[Server] Listening on http://localhost:${PORT}`)
+    console.log(`[Server] Listening on port ${PORT}`);
 })

@@ -25,6 +25,9 @@ const EVENTS = {
   RACER: {
     GAME_OVER: "racer:gameOver",
   },
+  PAINT: {
+    GAME_OVER: "paint:gameOver",
+  }
 };
 
 Object.freeze(EVENTS);

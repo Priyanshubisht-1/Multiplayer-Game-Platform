@@ -15,14 +15,14 @@
  */
 
 const BaseGame = require("../base/BaseGame");
-const EVENTS   = require("../../shared/events");
+const EVENTS = require("../../shared/events");
 
-const ARENA_W        = 800;
-const ARENA_H        = 600;
-const CAR_RADIUS     = 16;
-const BASE_SPEED     = 190;
-const OFFROAD_SPEED  = 120;
-const LAPS_TO_WIN    = 3;
+const ARENA_W = 800;
+const ARENA_H = 600;
+const CAR_RADIUS = 16;
+const BASE_SPEED = 190;
+const OFFROAD_SPEED = 120;
+const LAPS_TO_WIN = 3;
 
 const SPAWNS = [
   { x: 100, y: 260 },
@@ -40,35 +40,40 @@ const OBSTACLES = [
 ];
 
 const CHECKPOINTS = [
-  { id: 0, x: 260, y:  80, width: 300, height: 100, axis: "horizontal" },
-  { id: 1, x: 560, y: 170, width: 110, height: 220, axis: "vertical"   },
+  { id: 0, x: 260, y: 80, width: 300, height: 100, axis: "horizontal" },
+  { id: 1, x: 560, y: 170, width: 110, height: 220, axis: "vertical" },
   { id: 2, x: 250, y: 400, width: 300, height: 100, axis: "horizontal" },
 ];
 
 const FINISH_GATE = {
-  x: 70, y: 200, width: 180, height: 20, axis: "horizontal",
+  x: 70,
+  y: 200,
+  width: 180,
+  height: 20,
+  axis: "horizontal",
 };
 
 // ── Legacy direction → dx/dy map (backward compat) ────────────────────────────
 const DIR_MAP = {
-  up:         {  dx:  0, dy: -1 },
-  down:       {  dx:  0, dy:  1 },
-  left:       {  dx: -1, dy:  0 },
-  right:      {  dx:  1, dy:  0 },
-  "up-left":  {  dx: -0.7071, dy: -0.7071 },
-  "up-right": {  dx:  0.7071, dy: -0.7071 },
-  "down-left":{  dx: -0.7071, dy:  0.7071 },
-  "down-right":{ dx:  0.7071, dy:  0.7071 },
+  up: { dx: 0, dy: -1 },
+  down: { dx: 0, dy: 1 },
+  left: { dx: -1, dy: 0 },
+  right: { dx: 1, dy: 0 },
+  "up-left": { dx: -0.7071, dy: -0.7071 },
+  "up-right": { dx: 0.7071, dy: -0.7071 },
+  "down-left": { dx: -0.7071, dy: 0.7071 },
+  "down-right": { dx: 0.7071, dy: 0.7071 },
 };
 
 class RacerGame extends BaseGame {
   constructor(room) {
     super(room);
-    this.pauseEndTime    = null;
+    this.pauseEndTime = null;
     this.pauseDurationMs = 30_000;
-    this.winnerId        = null;
+    this.winnerId = null;
     this.track = {
-      width: ARENA_W, height: ARENA_H,
+      width: ARENA_W,
+      height: ARENA_H,
       lapsToWin: LAPS_TO_WIN,
       checkpoints: CHECKPOINTS,
       finishGate: FINISH_GATE,
@@ -83,7 +88,7 @@ class RacerGame extends BaseGame {
   // ── Lifecycle ───────────────────────────────────────────────────────────────
 
   init() {
-    this.winnerId   = null;
+    this.winnerId = null;
     this.pauseEndTime = null;
     this.state.meta = { paused: false, reason: "", countdown: 0 };
   }
@@ -96,9 +101,12 @@ class RacerGame extends BaseGame {
     const spawn = SPAWNS[index] || SPAWNS[0];
 
     this.state.players[playerId] = {
-      x: spawn.x, y: spawn.y,
-      prevX: spawn.x, prevY: spawn.y,
-      vx: 0, vy: 0,
+      x: spawn.x,
+      y: spawn.y,
+      prevX: spawn.x,
+      prevY: spawn.y,
+      vx: 0,
+      vy: 0,
       angle: -Math.PI / 2,
       speed: BASE_SPEED,
       lap: 0,
@@ -129,7 +137,10 @@ class RacerGame extends BaseGame {
       let dx = Math.max(-1, Math.min(1, input.dx));
       let dy = Math.max(-1, Math.min(1, input.dy));
       const mag = Math.hypot(dx, dy);
-      if (mag > 1) { dx /= mag; dy /= mag; }
+      if (mag > 1) {
+        dx /= mag;
+        dy /= mag;
+      }
       p.inputDx = dx;
       p.inputDy = dy;
       return;
@@ -143,12 +154,23 @@ class RacerGame extends BaseGame {
       // Release: clear axis only if this direction was driving it
       const mapped = DIR_MAP[direction];
       if (mapped) {
-        if (Math.abs(mapped.dx) > 0.1 && Math.sign(p.inputDx) === Math.sign(mapped.dx)) p.inputDx = 0;
-        if (Math.abs(mapped.dy) > 0.1 && Math.sign(p.inputDy) === Math.sign(mapped.dy)) p.inputDy = 0;
+        if (
+          Math.abs(mapped.dx) > 0.1 &&
+          Math.sign(p.inputDx) === Math.sign(mapped.dx)
+        )
+          p.inputDx = 0;
+        if (
+          Math.abs(mapped.dy) > 0.1 &&
+          Math.sign(p.inputDy) === Math.sign(mapped.dy)
+        )
+          p.inputDy = 0;
       }
     } else {
       const mapped = DIR_MAP[direction];
-      if (mapped) { p.inputDx = mapped.dx; p.inputDy = mapped.dy; }
+      if (mapped) {
+        p.inputDx = mapped.dx;
+        p.inputDy = mapped.dy;
+      }
     }
   }
 
@@ -198,12 +220,12 @@ class RacerGame extends BaseGame {
     }
 
     // ── Resume ──
-    this.state.meta.paused   = false;
-    this.state.meta.reason   = "";
+    this.state.meta.paused = false;
+    this.state.meta.reason = "";
     this.state.meta.countdown = 0;
-    this.pauseEndTime         = null;
+    this.pauseEndTime = null;
 
-    const dt      = delta / 1000;
+    const dt = delta / 1000;
     const activeIds = this._getActivePlayers();
 
     for (const id of activeIds) {
@@ -218,7 +240,10 @@ class RacerGame extends BaseGame {
 
       // Normalize (safety — analog should already be unit but legacy may not be)
       const mag = Math.hypot(dx, dy);
-      if (mag > 0) { dx /= mag; dy /= mag; }
+      if (mag > 0) {
+        dx /= mag;
+        dy /= mag;
+      }
 
       const moveSpeed = this._isOnRoad(p.x, p.y) ? BASE_SPEED : OFFROAD_SPEED;
 
@@ -239,9 +264,6 @@ class RacerGame extends BaseGame {
 
       this._updateProgress(id, p);
     }
-
-    // ── Car-to-car collision ──
-    this._resolveCarCollisions(activeIds);
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -262,67 +284,37 @@ class RacerGame extends BaseGame {
   }
 
   _isOnRoad(x, y) {
-    const outer = this._ellipseNorm(x, y,
-      this.track.road.outer.x, this.track.road.outer.y,
-      this.track.road.outer.rx, this.track.road.outer.ry);
-    const inner = this._ellipseNorm(x, y,
-      this.track.road.inner.x, this.track.road.inner.y,
-      this.track.road.inner.rx, this.track.road.inner.ry);
+    const outer = this._ellipseNorm(
+      x,
+      y,
+      this.track.road.outer.x,
+      this.track.road.outer.y,
+      this.track.road.outer.rx,
+      this.track.road.outer.ry,
+    );
+    const inner = this._ellipseNorm(
+      x,
+      y,
+      this.track.road.inner.x,
+      this.track.road.inner.y,
+      this.track.road.inner.rx,
+      this.track.road.inner.ry,
+    );
     return outer <= 1 && inner >= 1;
   }
 
   _ellipseNorm(x, y, cx, cy, rx, ry) {
-    const dx = x - cx, dy = y - cy;
+    const dx = x - cx,
+      dy = y - cy;
     return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
   }
 
   _resolveMovement(x, y) {
-    let nx = Math.max(CAR_RADIUS, Math.min(ARENA_W - CAR_RADIUS, x));
-    let ny = Math.max(CAR_RADIUS, Math.min(ARENA_H - CAR_RADIUS, y));
-
-    for (const obs of OBSTACLES) {
-      const dx = nx - obs.x, dy = ny - obs.y;
-      const dist = Math.hypot(dx, dy);
-      const min  = CAR_RADIUS + obs.r;
-      if (dist > 0 && dist < min) {
-        const push = min - dist;
-        nx += (dx / dist) * push;
-        ny += (dy / dist) * push;
-      }
-    }
-
-    nx = Math.max(CAR_RADIUS, Math.min(ARENA_W - CAR_RADIUS, nx));
-    ny = Math.max(CAR_RADIUS, Math.min(ARENA_H - CAR_RADIUS, ny));
+    const nx = Math.max(CAR_RADIUS, Math.min(ARENA_W - CAR_RADIUS, x));
+    const ny = Math.max(CAR_RADIUS, Math.min(ARENA_H - CAR_RADIUS, y));
     return { x: nx, y: ny };
   }
 
-  /** Push overlapping cars apart */
-  _resolveCarCollisions(ids) {
-    const minDist = CAR_RADIUS * 2;
-    for (let i = 0; i < ids.length; i++) {
-      for (let j = i + 1; j < ids.length; j++) {
-        const a = this.state.players[ids[i]];
-        const b = this.state.players[ids[j]];
-        if (!a || !b) continue;
-
-        const dx   = b.x - a.x, dy = b.y - a.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < minDist && dist > 0) {
-          const overlap = (minDist - dist) / 2;
-          const nx = (dx / dist) * overlap;
-          const ny = (dy / dist) * overlap;
-          a.x -= nx; a.y -= ny;
-          b.x += nx; b.y += ny;
-
-          // Clamp after push
-          a.x = Math.max(CAR_RADIUS, Math.min(ARENA_W - CAR_RADIUS, a.x));
-          a.y = Math.max(CAR_RADIUS, Math.min(ARENA_H - CAR_RADIUS, a.y));
-          b.x = Math.max(CAR_RADIUS, Math.min(ARENA_W - CAR_RADIUS, b.x));
-          b.y = Math.max(CAR_RADIUS, Math.min(ARENA_H - CAR_RADIUS, b.y));
-        }
-      }
-    }
-  }
 
   _updateProgress(playerId, player) {
     const nextGate = CHECKPOINTS[player.checkpointIndex];
@@ -349,7 +341,7 @@ class RacerGame extends BaseGame {
     if (!gate) return false;
 
     const wasInside = this._pointInRect(player.prevX, player.prevY, gate);
-    const isInside  = this._pointInRect(player.x, player.y, gate);
+    const isInside = this._pointInRect(player.x, player.y, gate);
 
     // Entered gate this frame
     if (!wasInside && isInside) return true;
@@ -361,17 +353,35 @@ class RacerGame extends BaseGame {
     if (gate.axis === "vertical") {
       const midX = gate.x + gate.width / 2;
       const prevSide = player.prevX < midX ? -1 : 1;
-      const currSide = player.x       < midX ? -1 : 1;
-      if (prevSide !== currSide && this._segmentCrossesRect(
-        player.prevX, player.prevY, player.x, player.y, gate)) return true;
+      const currSide = player.x < midX ? -1 : 1;
+      if (
+        prevSide !== currSide &&
+        this._segmentCrossesRect(
+          player.prevX,
+          player.prevY,
+          player.x,
+          player.y,
+          gate,
+        )
+      )
+        return true;
     }
 
     if (gate.axis === "horizontal") {
       const midY = gate.y + gate.height / 2;
       const prevSide = player.prevY < midY ? -1 : 1;
-      const currSide = player.y     < midY ? -1 : 1;
-      if (prevSide !== currSide && this._segmentCrossesRect(
-        player.prevX, player.prevY, player.x, player.y, gate)) return true;
+      const currSide = player.y < midY ? -1 : 1;
+      if (
+        prevSide !== currSide &&
+        this._segmentCrossesRect(
+          player.prevX,
+          player.prevY,
+          player.x,
+          player.y,
+          gate,
+        )
+      )
+        return true;
     }
 
     return false;
@@ -379,8 +389,10 @@ class RacerGame extends BaseGame {
 
   _pointInRect(x, y, rect) {
     return (
-      x >= rect.x && x <= rect.x + rect.width &&
-      y >= rect.y && y <= rect.y + rect.height
+      x >= rect.x &&
+      x <= rect.x + rect.width &&
+      y >= rect.y &&
+      y <= rect.y + rect.height
     );
   }
 
@@ -389,7 +401,10 @@ class RacerGame extends BaseGame {
    * Uses the separating-axis theorem for a segment vs rectangle.
    */
   _segmentCrossesRect(x1, y1, x2, y2, rect) {
-    const rx = rect.x, ry = rect.y, rw = rect.width, rh = rect.height;
+    const rx = rect.x,
+      ry = rect.y,
+      rw = rect.width,
+      rh = rect.height;
 
     // Quick bbox reject
     if (Math.max(x1, x2) < rx || Math.min(x1, x2) > rx + rw) return false;
@@ -401,17 +416,19 @@ class RacerGame extends BaseGame {
 
     // Check each of the 4 rect edges against the segment
     return (
-      this._segmentsIntersect(x1, y1, x2, y2, rx,      ry,      rx + rw, ry      ) ||
-      this._segmentsIntersect(x1, y1, x2, y2, rx + rw, ry,      rx + rw, ry + rh ) ||
-      this._segmentsIntersect(x1, y1, x2, y2, rx + rw, ry + rh, rx,      ry + rh ) ||
-      this._segmentsIntersect(x1, y1, x2, y2, rx,      ry + rh, rx,      ry      )
+      this._segmentsIntersect(x1, y1, x2, y2, rx, ry, rx + rw, ry) ||
+      this._segmentsIntersect(x1, y1, x2, y2, rx + rw, ry, rx + rw, ry + rh) ||
+      this._segmentsIntersect(x1, y1, x2, y2, rx + rw, ry + rh, rx, ry + rh) ||
+      this._segmentsIntersect(x1, y1, x2, y2, rx, ry + rh, rx, ry)
     );
   }
 
   /** Standard 2D segment-segment intersection test */
   _segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
-    const d1x = bx - ax, d1y = by - ay;
-    const d2x = dx - cx, d2y = dy - cy;
+    const d1x = bx - ax,
+      d1y = by - ay;
+    const d2x = dx - cx,
+      d2y = dy - cy;
     const cross = d1x * d2y - d1y * d2x;
     if (Math.abs(cross) < 1e-10) return false; // parallel
 
@@ -441,16 +458,19 @@ class RacerGame extends BaseGame {
     for (const [id, p] of Object.entries(this.state.players)) {
       if (!this.room.players[id]?.connected) continue;
       players[id] = {
-        x: p.x, y: p.y,
-        prevX: p.prevX, prevY: p.prevY,
-        vx: p.vx, vy: p.vy,
+        x: p.x,
+        y: p.y,
+        prevX: p.prevX,
+        prevY: p.prevY,
+        vx: p.vx,
+        vy: p.vy,
         angle: p.angle,
         speed: p.speed,
         lap: p.lap,
         checkpointIndex: p.checkpointIndex,
         finished: p.finished,
         color: this.room.players[id]?.color,
-        name:  this.room.players[id]?.name || id,
+        name: this.room.players[id]?.name || id,
       };
     }
 
@@ -460,8 +480,8 @@ class RacerGame extends BaseGame {
       winner: this.winnerId,
       track: this.track,
       meta: {
-        paused:    !!this.state.meta?.paused,
-        reason:    this.state.meta?.reason   || "",
+        paused: !!this.state.meta?.paused,
+        reason: this.state.meta?.reason || "",
         countdown: this.state.meta?.countdown || 0,
       },
     };

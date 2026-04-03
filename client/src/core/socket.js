@@ -10,7 +10,11 @@ function getPlayerId() {
 
   return playerId;
 }
-const socket = io("http://10.151.187.39:3000", {
+
+const SERVER_URL =
+  import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+
+const socket = io(SERVER_URL, {
   transports: ["websocket"],
   auth: {
     playerId: getPlayerId(),
