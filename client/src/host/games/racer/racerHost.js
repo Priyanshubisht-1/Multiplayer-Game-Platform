@@ -1,28 +1,14 @@
+import racerTrack from "./assets/racer-track.png";
+import racerCarRed from "./assets/racer-car-red.png";
+import racerCarBlue from "./assets/racer-car-blue.png";
+import racerCarGreen from "./assets/racer-car-green.png";
+import racerCarYellow from "./assets/racer-car-yellow.png";
 export function preload(scene) {
-  scene.load.image(
-    "racer-track",
-    "src/host/games/racer/assets/racer-track.png",
-  );
-
-  scene.load.image(
-    "racer-car-red",
-    "src/host/games/racer/assets/racer-car-red.png",
-  );
-
-  scene.load.image(
-    "racer-car-blue",
-    "src/host/games/racer/assets/racer-car-blue.png",
-  );
-
-  scene.load.image(
-    "racer-car-green",
-    "src/host/games/racer/assets/racer-car-green.png",
-  );
-
-  scene.load.image(
-    "racer-car-yellow",
-    "src/host/games/racer/assets/racer-car-yellow.png",
-  );
+  scene.load.image("racer-track", racerTrack);
+  scene.load.image("racer-car-red", racerCarRed);
+  scene.load.image("racer-car-blue", racerCarBlue);
+  scene.load.image("racer-car-green", racerCarGreen);
+  scene.load.image("racer-car-yellow", racerCarYellow);
 }
 
 export function createHostRenderer(scene) {
