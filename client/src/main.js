@@ -22,22 +22,14 @@ function init() {
   socket.on(EVENTS.ROOM.UPDATE, (lobby) => {
     const playerId = localStorage.getItem("playerId");
     const isHost = lobby.hostId === playerId;
-
-    // Keep the game screen active while the room is running.
-    // Once the room resets back to waiting, lobby will render again.
-    if (lobby.status === "running") {
-      return;
-    }
-
+    if (lobby.status === "running") return;
     renderLobby(lobby, isHost);
   });
 
   socket.on(EVENTS.GAME.STARTED, async ({ game }) => {
     console.log("[Main] Game started:", game);
-
     if (mode === "host") {
       mountHostGame();
-
       await GameManager.waitForScene();
       await GameManager.setGame(game);
     } else if (mode === "controller") {
@@ -61,46 +53,48 @@ function renderModeSelection() {
   if (!app) return;
 
   app.innerHTML = `
-        <div class="landing-screen">
-            <div class="landing-card">
-                <div class="landing-badge">Local Multiplayer</div>
-
-                <h1 class="landing-title">Game System</h1>
-
-                <p class="landing-subtitle">
-                    One host screen runs the game and mobile devices join as controllers.
-                    Select how you want to enter the system.
-                </p>
-
-                <div class="mode-grid">
-                    <button id="host-mode-btn" class="mode-card host-card" type="button">
-                        <div class="mode-icon">🖥️</div>
-                        <div class="mode-content">
-                            <h2>Host Mode</h2>
-                            <p>Create a room, manage the lobby, and display the live game on the main screen.</p>
-                        </div>
-                    </button>
-
-                    <button id="controller-mode-btn" class="mode-card controller-card" type="button">
-                        <div class="mode-icon">📱</div>
-                        <div class="mode-content">
-                            <h2>Controller Mode</h2>
-                            <p>Join an existing room from your mobile device and control your player in the game.</p>
-                        </div>
-                    </button>
-                </div>
-            </div>
+    <div class="landing-screen">
+      <div class="landing-card">
+        <div class="landing-logo">
+          <div class="logo-icon">🎮</div>
+          <span class="logo-wordmark">ARCADELINK</span>
         </div>
-    `;
 
-  const hostBtn = document.getElementById("host-mode-btn");
-  const controllerBtn = document.getElementById("controller-mode-btn");
+        <div class="landing-badge">
+          <span class="dot"></span>
+          Local Multiplayer
+        </div>
 
-  hostBtn?.addEventListener("click", () => {
+        <h1 class="landing-title">Game System</h1>
+
+        <p class="landing-subtitle">
+          One host screen runs the game — mobile devices join as controllers.
+          No installs, no accounts. Just pick your role and play.
+        </p>
+
+        <div class="mode-grid">
+          <button id="host-mode-btn" class="mode-card host-card" type="button">
+            <div class="mode-icon-wrap">🖥️</div>
+            <h2>Host Mode</h2>
+            <p>Create a room, manage the lobby, and display the live game on the main screen.</p>
+            <span class="mode-card-arrow">↗</span>
+          </button>
+
+          <button id="controller-mode-btn" class="mode-card controller-card" type="button">
+            <div class="mode-icon-wrap">📱</div>
+            <h2>Controller Mode</h2>
+            <p>Join an existing room from your mobile device and control your player in the game.</p>
+            <span class="mode-card-arrow">↗</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("host-mode-btn")?.addEventListener("click", () => {
     window.location.href = `${window.location.pathname}?mode=host`;
   });
-
-  controllerBtn?.addEventListener("click", () => {
+  document.getElementById("controller-mode-btn")?.addEventListener("click", () => {
     window.location.href = `${window.location.pathname}?mode=controller`;
   });
 }
@@ -110,31 +104,30 @@ function renderHostLobbyEntry() {
   if (!app) return;
 
   app.innerHTML = `
-        <div class="entry-screen">
-            <div class="entry-card">
-                <div class="entry-header">
-                    <span class="entry-badge host-badge">HOST</span>
-                    <button id="back-home-btn" class="back-btn" type="button">← Back</button>
-                </div>
-
-                <h1 class="entry-title">Host Lobby</h1>
-                <p class="entry-subtitle">
-                    Create a room, select a game, and manage controllers from the main display.
-                </p>
-
-                <div class="entry-actions">
-                    <button id="create-room-btn" class="primary-btn" type="button">
-                        Create Room
-                    </button>
-                </div>
-
-                <div id="inline-message" class="inline-message"></div>
-            </div>
+    <div class="entry-screen">
+      <div class="entry-card">
+        <div class="entry-header">
+          <span class="entry-badge host-badge">HOST</span>
+          <button id="back-home-btn" class="back-btn" type="button">← Back</button>
         </div>
-    `;
+
+        <h1 class="entry-title">Host Lobby</h1>
+        <p class="entry-subtitle">
+          Create a room, select a game, and manage controllers from the main display.
+        </p>
+
+        <div class="entry-actions">
+          <button id="create-room-btn" class="primary-btn" type="button">
+            Create Room
+          </button>
+        </div>
+
+        <div id="inline-message" class="inline-message"></div>
+      </div>
+    </div>
+  `;
 
   document.getElementById("back-home-btn")?.addEventListener("click", goHome);
-
   setupCreateRoom();
 }
 
@@ -143,48 +136,46 @@ function renderControllerLobbyEntry() {
   if (!app) return;
 
   app.innerHTML = `
-        <div class="entry-screen">
-            <div class="entry-card">
-                <div class="entry-header">
-                    <span class="entry-badge controller-badge">CONTROLLER</span>
-                    <button id="back-home-btn" class="back-btn" type="button">← Back</button>
-                </div>
-
-                <h1 class="entry-title">Join Room</h1>
-                <p class="entry-subtitle">
-                    Enter the room code to connect this device as a controller.
-                </p>
-
-                <div class="form-group">
-    <label class="input-label">Your Name</label>
-    <input id="player-name-input" class="text-input" placeholder="Enter your name (optional)" />
-</div>
-
-<div class="form-group">
-    <label class="input-label">Room ID</label>
-    <input id="room-id-input" class="text-input" placeholder="Enter Room ID" />
-</div>
-
-                <div class="entry-actions">
-                    <button id="join-room-btn" class="primary-btn" type="button">
-                        Join Room
-                    </button>
-                </div>
-
-                <div id="inline-message" class="inline-message"></div>
-            </div>
+    <div class="entry-screen">
+      <div class="entry-card">
+        <div class="entry-header">
+          <span class="entry-badge controller-badge">CONTROLLER</span>
+          <button id="back-home-btn" class="back-btn" type="button">← Back</button>
         </div>
-    `;
+
+        <h1 class="entry-title">Join Room</h1>
+        <p class="entry-subtitle">
+          Enter the room code to connect this device as a controller.
+        </p>
+
+        <div class="form-group">
+          <label class="input-label">Your Name</label>
+          <input id="player-name-input" class="text-input" placeholder="Enter your name (optional)" />
+        </div>
+
+        <div class="form-group">
+          <label class="input-label">Room ID</label>
+          <input id="room-id-input" class="text-input" placeholder="Enter Room ID" />
+        </div>
+
+        <div class="entry-actions">
+          <button id="join-room-btn" class="primary-btn" type="button">
+            Join Room
+          </button>
+        </div>
+
+        <div id="inline-message" class="inline-message"></div>
+      </div>
+    </div>
+  `;
 
   document.getElementById("back-home-btn")?.addEventListener("click", goHome);
-
   setupJoinRoom();
 }
 
 function renderInlineMessage(message) {
   const messageBox = document.getElementById("inline-message");
   if (!messageBox) return;
-
   messageBox.textContent = message;
   messageBox.style.display = "block";
 }

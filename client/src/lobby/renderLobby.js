@@ -11,12 +11,9 @@ export function renderLobby(lobby, isHost) {
   mountLobbyStyles();
 
   const controllers = Array.isArray(lobby.players) ? lobby.players : [];
-  const connectedControllers = controllers.filter(
-    (controller) => controller.connected,
-  );
+  const connectedControllers = controllers.filter((c) => c.connected);
   const connectedCount = connectedControllers.length;
   const selectedGameMeta = GAMES.find((g) => g.id === lobby.selectedGame);
-
   const minPlayers = selectedGameMeta?.minPlayers || 1;
   const maxPlayers = selectedGameMeta?.maxPlayers || Infinity;
 
@@ -27,707 +24,619 @@ export function renderLobby(lobby, isHost) {
     connectedCount <= maxPlayers &&
     lobby.status !== "running";
 
+  // Controller list HTML
   const controllersHtml =
     controllers.length > 0
-      ? controllers
-          .map((controller) => {
-            const initial = escapeHtml(
-              controller.name?.charAt(0)?.toUpperCase() || "C",
-            );
+      ? controllers.map((c) => {
+          const initial = escapeHtml(c.name?.charAt(0)?.toUpperCase() || "C");
+          return `
+            <li class="lc-card">
+              <div class="lc-avatar" style="background:${c.color || "#4f8aff"}">
+                ${initial}
+              </div>
+              <div class="lc-info">
+                <span class="lc-name">${escapeHtml(c.name || "Controller")}</span>
+                <span class="lc-status ${c.connected ? "is-on" : "is-off"}">
+                  <span class="lc-dot"></span>
+                  ${c.connected ? "Connected" : "Disconnected"}
+                </span>
+              </div>
+            </li>`;
+        }).join("")
+      : `<li class="lc-empty">
+           <span>🎮</span>
+           <span>No controllers have joined yet</span>
+         </li>`;
 
-            return `
-                    <li class="lobby-controller-card">
-                        <div class="lobby-controller-avatar"
-     style="background:${controller.color || "#2563eb"}">
-     ${initial}
-</div>
-                        <div class="lobby-controller-info">
-                            <span class="lobby-controller-name">
-                                ${escapeHtml(controller.name || "Controller")}
-                            </span>
-                            <span class="lobby-controller-state ${
-                              controller.connected
-                                ? "is-connected"
-                                : "is-disconnected"
-                            }">
-                                ${
-                                  controller.connected
-                                    ? "Controller Connected"
-                                    : "Disconnected"
-                                }
-                            </span>
-                        </div>
-                    </li>
-                `;
-          })
-          .join("")
-      : `
-            <li class="lobby-empty-state">
-                No controllers have joined yet.
-            </li>
-        `;
-
+  // Game cards HTML
   const gameCardsHtml = GAMES.map((game) => {
     const isSelected = lobby.selectedGame === game.id;
     const disabled = !isHost || lobby.status === "running";
-
     return `
-    <button
-      class="lobby-game-card ${isSelected ? "selected" : ""}"
-      data-game="${escapeHtml(game.id)}"
-      type="button"
-      ${disabled ? "disabled" : ""}
-    >
-      <div class="lobby-game-card-top">
-        <span class="lobby-game-icon">${escapeHtml(game.emoji || "🎮")}</span>
-        <span class="lobby-game-tag ${isSelected ? "selected" : ""}">
-          ${isSelected ? "Selected" : "Available"}
-        </span>
-      </div>
-
-      <h4>${escapeHtml(game.name)}</h4>
-      <p>${escapeHtml(game.description || "A modular local multiplayer game for the shared host screen.")}</p>
-    </button>
-  `;
-  }).join("");
-  app.innerHTML = `
-        <div class="lobby-shell">
-            <section class="lobby-panel lobby-panel--main">
-                <div class="lobby-header">
-                    <div>
-                        <div class="lobby-kicker">Room Lobby</div>
-                        <h1 class="lobby-room-title">Room ${escapeHtml(lobby.roomId || "")}</h1>
-                        <p class="lobby-subtitle">
-                            ${
-                              isHost
-                                ? "This screen is the common display. Controllers join from their own devices and the host starts the game when ready."
-                                : "This device is connected as a controller. Wait for the host display to start the game."
-                            }
-                        </p>
-                    </div>
-
-                    <div class="lobby-room-tools">
-                        <div class="lobby-status-pill ${getStatusClass(lobby.status)}">
-                            ${formatStatus(lobby.status)}
-                        </div>
-
-                        <button id="copy-room-btn" class="lobby-secondary-btn" type="button">
-                            Copy Room ID
-                        </button>
-                    </div>
-                </div>
-
-                <div class="lobby-summary-grid">
-                    <div class="lobby-summary-card">
-                        <span class="lobby-summary-label">Controllers Connected</span>
-                        <strong class="lobby-summary-value">${connectedCount}</strong>
-                    </div>
-
-                    <div class="lobby-summary-card">
-                        <span class="lobby-summary-label">Total Controllers</span>
-                        <strong class="lobby-summary-value">${controllers.length}</strong>
-                    </div>
-
-                    <div class="lobby-summary-card">
-                        <span class="lobby-summary-label">Selected Game</span>
-                        <strong class="lobby-summary-value">
-                            ${escapeHtml(selectedGameMeta?.name || "None")}
-                        </strong>
-                    </div>
-                </div>
-
-                <div id="lobby-message-box" class="lobby-message-box" style="display:none;"></div>
-            </section>
-
-            <section class="lobby-layout-grid">
-                <div class="lobby-panel">
-                    <div class="lobby-section-head">
-                        <h2>Controllers</h2>
-                        <span class="lobby-section-count">${controllers.length}</span>
-                    </div>
-
-                    <ul class="lobby-controller-list">
-                        ${controllersHtml}
-                    </ul>
-                </div>
-
-                <div class="lobby-panel">
-                    <div class="lobby-section-head">
-                        <h2>${isHost ? "Select Game" : "Game Selection"}</h2>
-                    </div>
-
-                    <div class="lobby-game-grid">
-                        ${gameCardsHtml}
-                    </div>
-
-                    ${
-                      isHost
-                        ? `
-                                <div class="lobby-action-area">
-                                    <button
-                                        id="start-game-btn"
-                                        class="lobby-primary-btn"
-                                        type="button"
-                                        ${canStart ? "" : "disabled"}
-                                    >
-                                        Start Game
-                                    </button>
-
-                                    <p class="lobby-helper-text">
-  ${
-    !lobby.selectedGame
-      ? "Select a game before starting."
-      : connectedCount < (selectedGameMeta?.minPlayers || 1)
-        ? `At least ${selectedGameMeta?.minPlayers || 1} connected controllers are required to start.`
-        : connectedCount > (selectedGameMeta?.maxPlayers || Infinity)
-          ? `Maximum ${selectedGameMeta?.maxPlayers} controllers allowed for this game.`
-          : lobby.status === "running"
-            ? "The game is already running."
-            : `Ready to start (${selectedGameMeta?.minPlayers || 1}-${selectedGameMeta?.maxPlayers || "∞"} players).`
-  }                                                   
-</p>
-                                </div>
-                            `
-                        : `
-                                <div class="lobby-wait-box">
-                                    Waiting for the host display to choose a game and start the session.
-                                </div>
-                            `
-                    }
-                </div>
-            </section>
+      <button
+        class="lg-card ${isSelected ? "is-selected" : ""}"
+        data-game="${escapeHtml(game.id)}"
+        type="button"
+        ${disabled ? "disabled" : ""}
+      >
+        <div class="lg-card-top">
+          <span class="lg-emoji">${escapeHtml(game.emoji || "🎮")}</span>
+          <span class="lg-tag ${isSelected ? "is-sel" : ""}">${isSelected ? "● Selected" : "Available"}</span>
         </div>
-    `;
+        <h4 class="lg-name">${escapeHtml(game.name)}</h4>
+        <p class="lg-desc">${escapeHtml(game.description || "A modular local multiplayer game.")}</p>
+        <div class="lg-meta">
+          <span>👥 ${game.minPlayers}–${game.maxPlayers} players</span>
+        </div>
+      </button>`;
+  }).join("");
+
+  // Helper message
+  const helperMsg = !lobby.selectedGame
+    ? "Select a game to continue."
+    : connectedCount < (selectedGameMeta?.minPlayers || 1)
+    ? `Need at least ${selectedGameMeta?.minPlayers} connected controllers.`
+    : connectedCount > (selectedGameMeta?.maxPlayers || Infinity)
+    ? `Max ${selectedGameMeta?.maxPlayers} controllers for this game.`
+    : lobby.status === "running"
+    ? "Game is already running."
+    : `Ready to start · ${selectedGameMeta?.minPlayers}–${selectedGameMeta?.maxPlayers} players`;
+
+  app.innerHTML = `
+    <div class="lb-shell">
+
+      <!-- Top bar -->
+      <header class="lb-topbar">
+        <div class="lb-brand">
+          <div class="lb-brand-icon">🎮</div>
+          <span class="lb-brand-text">ARCADELINK</span>
+        </div>
+        <div class="lb-topbar-right">
+          <div class="lb-status-pill ${getStatusClass(lobby.status)}">
+            <span class="lb-status-dot"></span>
+            ${formatStatus(lobby.status)}
+          </div>
+          <button id="copy-room-btn" class="lb-copy-btn" type="button">
+            <span>📋</span> Copy Room ID
+          </button>
+        </div>
+      </header>
+
+      <!-- Hero -->
+      <section class="lb-hero">
+        <div class="lb-hero-left">
+          <div class="lb-kicker">Room Lobby</div>
+          <h1 class="lb-room-title">Room <span class="lb-room-id">${escapeHtml(lobby.roomId || "")}</span></h1>
+          <p class="lb-room-sub">
+            ${isHost
+              ? "This screen is the shared host display. Controllers join from their own devices."
+              : "You're connected as a controller. Wait for the host to start the game."}
+          </p>
+        </div>
+        <div class="lb-stats-row">
+          <div class="lb-stat">
+            <span class="lb-stat-num">${connectedCount}</span>
+            <span class="lb-stat-label">Connected</span>
+          </div>
+          <div class="lb-stat-divider"></div>
+          <div class="lb-stat">
+            <span class="lb-stat-num">${controllers.length}</span>
+            <span class="lb-stat-label">Total</span>
+          </div>
+          <div class="lb-stat-divider"></div>
+          <div class="lb-stat">
+            <span class="lb-stat-num">${escapeHtml(selectedGameMeta?.name || "—")}</span>
+            <span class="lb-stat-label">Game</span>
+          </div>
+        </div>
+      </section>
+
+      <div id="lobby-message-box" class="lb-msgbox" style="display:none;"></div>
+
+      <!-- Main grid -->
+      <div class="lb-grid">
+
+        <!-- Controllers panel -->
+        <section class="lb-panel">
+          <div class="lb-panel-head">
+            <h2 class="lb-panel-title">Controllers</h2>
+            <span class="lb-count">${controllers.length}</span>
+          </div>
+          <ul class="lc-list">${controllersHtml}</ul>
+        </section>
+
+        <!-- Game selection panel -->
+        <section class="lb-panel">
+          <div class="lb-panel-head">
+            <h2 class="lb-panel-title">${isHost ? "Select Game" : "Game Selection"}</h2>
+          </div>
+
+          <div class="lg-grid">${gameCardsHtml}</div>
+
+          ${isHost ? `
+            <div class="lb-start-area">
+              <button
+                id="start-game-btn"
+                class="lb-start-btn"
+                type="button"
+                ${canStart ? "" : "disabled"}
+              >
+                <span class="lb-start-icon">▶</span>
+                Start Game
+              </button>
+              <p class="lb-helper">${helperMsg}</p>
+            </div>
+          ` : `
+            <div class="lb-wait-box">
+              <span>⏳</span>
+              Waiting for the host to choose a game and start the session.
+            </div>
+          `}
+        </section>
+
+      </div>
+    </div>
+  `;
 
   attachSharedHandlers(lobby);
-
-  if (isHost) {
-    attachHostHandlers(lobby, connectedCount, canStart);
-  }
+  if (isHost) attachHostHandlers(lobby, connectedCount, canStart);
 }
 
 function attachSharedHandlers(lobby) {
-  const copyBtn = document.getElementById("copy-room-btn");
-
-  if (copyBtn) {
-    copyBtn.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(lobby.roomId || "");
-        showLobbyMessage("Room ID copied to clipboard.", "success");
-      } catch {
-        showLobbyMessage("Could not copy room ID.", "error");
-      }
-    };
-  }
+  document.getElementById("copy-room-btn")?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(lobby.roomId || "");
+      showLobbyMessage("Room ID copied to clipboard!", "success");
+    } catch {
+      showLobbyMessage("Could not copy room ID.", "error");
+    }
+  });
 }
 
 function attachHostHandlers(lobby, connectedCount, canStart) {
-  const gameCards = document.querySelectorAll(".lobby-game-card");
-
-  gameCards.forEach((card) => {
+  document.querySelectorAll(".lg-card").forEach((card) => {
     card.onclick = () => {
       if (lobby.status === "running") return;
-
       const game = card.dataset.game;
-      if (!game) return;
-
-      socket.emit(EVENTS.GAME.SELECT, { game });
+      if (game) socket.emit(EVENTS.GAME.SELECT, { game });
     };
   });
 
   const startBtn = document.getElementById("start-game-btn");
+  if (!startBtn) return;
 
-  if (startBtn) {
-    startBtn.onclick = () => {
-      if (!lobby.selectedGame) {
-        showLobbyMessage("Select a game first.", "error");
-        return;
-      }
+  startBtn.onclick = () => {
+    if (!lobby.selectedGame) { showLobbyMessage("Select a game first.", "error"); return; }
+    const meta = GAMES.find((g) => g.id === lobby.selectedGame);
+    const min = meta?.minPlayers || 1;
+    const max = meta?.maxPlayers || Infinity;
 
-      const selectedGameMeta = GAMES.find((g) => g.id === lobby.selectedGame);
-      const minPlayers = selectedGameMeta?.minPlayers || 1;
-      const maxPlayers = selectedGameMeta?.maxPlayers || Infinity;
+    if (connectedCount < min) { showLobbyMessage(`Need at least ${min} connected controllers.`, "error"); return; }
+    if (connectedCount > max) { showLobbyMessage(`Max ${max} controllers allowed.`, "error"); return; }
+    if (!canStart) { showLobbyMessage("Game cannot be started right now.", "error"); return; }
 
-      if (connectedCount < minPlayers) {
-        showLobbyMessage(
-          `At least ${minPlayers} connected controllers must join first.`,
-          "error",
-        );
-        return;
-      }
-
-      if (connectedCount > maxPlayers) {
-        showLobbyMessage(
-          `Maximum ${maxPlayers} controllers allowed for this game.`,
-          "error",
-        );
-        return;
-      }
-
-      if (!canStart) {
-        showLobbyMessage("Game cannot be started right now.", "error");
-        return;
-      }
-
-      startBtn.disabled = true;
-      startBtn.textContent = "Starting...";
-
-      socket.emit(EVENTS.GAME.START, {
-        game: lobby.selectedGame,
-      });
-    };
-  }
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<span class="lb-start-icon">⏳</span> Starting...';
+    socket.emit(EVENTS.GAME.START, { game: lobby.selectedGame });
+  };
 }
 
 function showLobbyMessage(message, type = "error") {
   const box = document.getElementById("lobby-message-box");
   if (!box) return;
-
   box.textContent = message;
-  box.className = `lobby-message-box ${type === "success" ? "is-success" : "is-error"}`;
+  box.className = `lb-msgbox ${type === "success" ? "is-ok" : "is-err"}`;
   box.style.display = "block";
 }
 
 function mountLobbyStyles() {
   if (lobbyStylesMounted) return;
-
   const style = document.createElement("style");
   style.id = "lobby-ui-styles";
   style.textContent = `
-        .lobby-shell {
-            min-height: 100vh;
-            padding: 28px;
-            color: #f8fafc;
-            font-family: Arial, sans-serif;
-        }
+    .lb-shell {
+      min-height: 100vh;
+      padding: 0 0 40px;
+      color: var(--text-primary, #eef2ff);
+      font-family: var(--font-body, 'Outfit', sans-serif);
+    }
 
-        .lobby-panel {
-            background: rgba(15, 23, 42, 0.74);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 22px;
-            padding: 24px;
-            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
-            backdrop-filter: blur(10px);
-        }
+    /* Top bar */
+    .lb-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border-dim, rgba(80,120,255,0.12));
+      background: rgba(4,5,15,0.6);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .lb-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .lb-brand-icon {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-blue,#4f8aff), var(--accent-purple,#9d5cff));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .lb-brand-text {
+      font-family: var(--font-display, 'Orbitron', monospace);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: var(--text-primary, #eef2ff);
+    }
+    .lb-topbar-right { display: flex; align-items: center; gap: 12px; }
 
-        .lobby-panel--main {
-            margin-bottom: 22px;
-        }
+    .lb-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      border: 1px solid transparent;
+    }
+    .lb-status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .status-waiting  { background:rgba(255,179,0,0.12); color:#ffcf40; border-color:rgba(255,179,0,0.25); }
+    .status-running  { background:rgba(0,255,157,0.1);  color:#00ff9d; border-color:rgba(0,255,157,0.25); }
+    .status-starting { background:rgba(79,138,255,0.12);color:#93b8ff; border-color:rgba(79,138,255,0.25); }
+    .status-ended    { background:rgba(255,77,106,0.12); color:#ff9aaa; border-color:rgba(255,77,106,0.25); }
 
-        .lobby-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-            margin-bottom: 24px;
-        }
+    .lb-copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border-dim, rgba(80,120,255,0.12));
+      background: rgba(255,255,255,0.05);
+      color: var(--text-secondary, #8892c4);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.84rem;
+      font-family: var(--font-body, 'Outfit', sans-serif);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .lb-copy-btn:hover {
+      background: rgba(255,255,255,0.09);
+      color: var(--text-primary, #eef2ff);
+      border-color: var(--border-mid, rgba(80,120,255,0.28));
+    }
 
-        .lobby-kicker {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #93c5fd;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
+    /* Hero section */
+    .lb-hero {
+      padding: 32px 28px 28px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .lb-kicker {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent-cyan, #00e5ff);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .lb-room-title {
+      font-family: var(--font-display, 'Orbitron', monospace);
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+    .lb-room-id {
+      color: var(--accent-cyan, #00e5ff);
+      text-shadow: 0 0 20px rgba(0,229,255,0.4);
+    }
+    .lb-room-sub {
+      color: var(--text-secondary, #8892c4);
+      line-height: 1.65;
+      max-width: 520px;
+      font-size: 0.95rem;
+    }
 
-        .lobby-room-title {
-            font-size: clamp(1.8rem, 3vw, 2.8rem);
-            line-height: 1.1;
-            margin: 0 0 10px;
-        }
+    .lb-stats-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(8,10,28,0.7);
+      border: 1px solid var(--border-dim, rgba(80,120,255,0.12));
+      border-radius: 16px;
+      padding: 16px 24px;
+      backdrop-filter: blur(12px);
+    }
+    .lb-stat { text-align: center; padding: 0 20px; }
+    .lb-stat-num {
+      display: block;
+      font-family: var(--font-display, 'Orbitron', monospace);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary, #eef2ff);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .lb-stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim, #4a5280);
+    }
+    .lb-stat-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border-dim, rgba(80,120,255,0.12));
+    }
 
-        .lobby-subtitle {
-            margin: 0;
-            color: #cbd5e1;
-            line-height: 1.6;
-            max-width: 720px;
-        }
+    /* Message box */
+    .lb-msgbox {
+      margin: 0 28px 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      border: 1px solid transparent;
+      line-height: 1.5;
+    }
+    .lb-msgbox.is-err { background:rgba(255,77,106,0.1); border-color:rgba(255,77,106,0.25); color:#ff9aaa; }
+    .lb-msgbox.is-ok  { background:rgba(0,255,157,0.08); border-color:rgba(0,255,157,0.22); color:#80ffcc; }
 
-        .lobby-room-tools {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 12px;
-        }
+    /* Main grid */
+    .lb-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 20px;
+      padding: 0 28px;
+    }
+    .lb-panel {
+      background: rgba(8,10,28,0.75);
+      border: 1px solid var(--border-dim, rgba(80,120,255,0.12));
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(14px);
+    }
+    .lb-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .lb-panel-title {
+      font-family: var(--font-display, 'Orbitron', monospace);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-primary, #eef2ff);
+    }
+    .lb-count {
+      min-width: 30px; height: 30px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(79,138,255,0.14);
+      color: #93b8ff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border: 1px solid rgba(79,138,255,0.22);
+    }
 
-        .lobby-status-pill {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 36px;
-            padding: 8px 14px;
-            border-radius: 999px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            border: 1px solid transparent;
-        }
+    /* Controller list */
+    .lc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lc-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(14,18,42,0.6);
+      border: 1px solid var(--border-dim, rgba(80,120,255,0.12));
+      border-radius: 14px;
+      padding: 12px 14px;
+      transition: border-color 0.18s;
+    }
+    .lc-card:hover { border-color: var(--border-mid, rgba(80,120,255,0.28)); }
+    .lc-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: white;
+      flex-shrink: 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    .lc-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .lc-name { font-weight: 600; font-size: 0.95rem; color: var(--text-primary, #eef2ff); }
+    .lc-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .lc-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .lc-status.is-on  { color: var(--accent-green, #00ff9d); }
+    .lc-status.is-off { color: var(--accent-red,   #ff4d6a); }
+    .lc-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 28px 18px;
+      border-radius: 14px;
+      border: 1px dashed var(--border-dim, rgba(80,120,255,0.12));
+      color: var(--text-dim, #4a5280);
+      font-size: 0.9rem;
+    }
 
-        .lobby-status-pill.status-waiting {
-            background: rgba(245, 158, 11, 0.16);
-            color: #fcd34d;
-            border-color: rgba(245, 158, 11, 0.28);
-        }
+    /* Game grid */
+    .lg-grid { display: flex; flex-direction: column; gap: 12px; }
+    .lg-card {
+      width: 100%;
+      text-align: left;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid var(--border-dim, rgba(80,120,255,0.12));
+      background: rgba(14,18,42,0.55);
+      color: var(--text-primary, #eef2ff);
+      cursor: pointer;
+      transition: transform 0.18s, border-color 0.18s, background 0.18s, box-shadow 0.18s;
+    }
+    .lg-card:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: rgba(20,26,58,0.8);
+      border-color: var(--border-mid, rgba(80,120,255,0.28));
+      box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+    }
+    .lg-card.is-selected {
+      border-color: rgba(0,255,157,0.4);
+      background: rgba(0,255,157,0.07);
+      box-shadow: 0 0 20px rgba(0,255,157,0.1);
+    }
+    .lg-card:disabled { opacity:0.5; cursor:not-allowed; }
+    .lg-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .lg-emoji { font-size: 1.5rem; }
+    .lg-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      color: var(--text-secondary, #8892c4);
+      letter-spacing: 0.06em;
+    }
+    .lg-tag.is-sel { background:rgba(0,255,157,0.14); color:#80ffcc; }
+    .lg-name { font-family: var(--font-display, 'Orbitron', monospace); font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.04em; }
+    .lg-desc { color: var(--text-secondary, #8892c4); line-height: 1.55; font-size: 0.87rem; margin-bottom: 10px; }
+    .lg-meta { font-size: 0.78rem; color: var(--text-dim, #4a5280); }
 
-        .lobby-status-pill.status-running {
-            background: rgba(34, 197, 94, 0.16);
-            color: #86efac;
-            border-color: rgba(34, 197, 94, 0.28);
-        }
+    /* Start area */
+    .lb-start-area { margin-top: 20px; }
+    .lb-start-btn {
+      width: 100%;
+      height: 52px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(90deg, var(--accent-blue,#4f8aff), var(--accent-purple,#9d5cff));
+      color: white;
+      font-family: var(--font-display, 'Orbitron', monospace);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+    }
+    .lb-start-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+    }
+    .lb-start-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 0 24px rgba(79,138,255,0.4), 0 0 60px rgba(79,138,255,0.1);
+    }
+    .lb-start-btn:active:not(:disabled) { transform: scale(0.984); }
+    .lb-start-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .lb-start-icon { font-size: 0.9rem; }
 
-        .lobby-status-pill.status-starting {
-            background: rgba(59, 130, 246, 0.16);
-            color: #93c5fd;
-            border-color: rgba(59, 130, 246, 0.28);
-        }
+    .lb-helper {
+      margin: 10px 0 0;
+      color: var(--text-secondary, #8892c4);
+      font-size: 0.85rem;
+      line-height: 1.55;
+      text-align: center;
+    }
 
-        .lobby-status-pill.status-ended {
-            background: rgba(239, 68, 68, 0.16);
-            color: #fca5a5;
-            border-color: rgba(239, 68, 68, 0.28);
-        }
+    .lb-wait-box {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 14px;
+      padding: 16px;
+      background: rgba(79,138,255,0.08);
+      border: 1px solid rgba(79,138,255,0.18);
+      color: #a3bfff;
+      line-height: 1.55;
+      font-size: 0.9rem;
+    }
 
-        .lobby-secondary-btn,
-        .lobby-primary-btn {
-            border: none;
-            border-radius: 14px;
-            padding: 12px 16px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
-        }
-
-        .lobby-secondary-btn {
-            background: rgba(255, 255, 255, 0.08);
-            color: #f8fafc;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .lobby-secondary-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .lobby-primary-btn {
-            width: 100%;
-            background: linear-gradient(90deg, #2563eb, #7c3aed);
-            color: white;
-            min-height: 50px;
-        }
-
-        .lobby-primary-btn:hover:not(:disabled) {
-            opacity: 0.95;
-        }
-
-        .lobby-primary-btn:active:not(:disabled),
-        .lobby-secondary-btn:active:not(:disabled) {
-            transform: scale(0.985);
-        }
-
-        .lobby-primary-btn:disabled,
-        .lobby-secondary-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .lobby-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .lobby-summary-card {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 18px;
-            padding: 18px;
-        }
-
-        .lobby-summary-label {
-            display: block;
-            color: #94a3b8;
-            font-size: 0.88rem;
-            margin-bottom: 10px;
-        }
-
-        .lobby-summary-value {
-            font-size: 1.15rem;
-            color: #f8fafc;
-        }
-
-        .lobby-message-box {
-            margin-top: 18px;
-            border-radius: 14px;
-            padding: 12px 14px;
-            font-size: 0.95rem;
-            border: 1px solid transparent;
-        }
-
-        .lobby-message-box.is-error {
-            background: rgba(239, 68, 68, 0.14);
-            border-color: rgba(239, 68, 68, 0.28);
-            color: #fecaca;
-        }
-
-        .lobby-message-box.is-success {
-            background: rgba(34, 197, 94, 0.14);
-            border-color: rgba(34, 197, 94, 0.28);
-            color: #bbf7d0;
-        }
-
-        .lobby-layout-grid {
-            display: grid;
-            grid-template-columns: 1.1fr 1fr;
-            gap: 22px;
-        }
-
-        .lobby-section-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-
-        .lobby-section-head h2 {
-            margin: 0;
-            font-size: 1.25rem;
-        }
-
-        .lobby-section-count {
-            min-width: 34px;
-            height: 34px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(59, 130, 246, 0.16);
-            color: #bfdbfe;
-            font-weight: 700;
-        }
-
-        .lobby-controller-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .lobby-controller-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
-            padding: 14px;
-        }
-
-        .lobby-controller-avatar {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
-            color: white;
-            font-weight: 700;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .lobby-controller-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-width: 0;
-        }
-
-        .lobby-controller-name {
-            font-weight: 700;
-            color: #f8fafc;
-            word-break: break-word;
-        }
-
-        .lobby-controller-state {
-            font-size: 0.88rem;
-            font-weight: 600;
-        }
-
-        .lobby-controller-state.is-connected {
-            color: #86efac;
-        }
-
-        .lobby-controller-state.is-disconnected {
-            color: #fca5a5;
-        }
-
-        .lobby-empty-state {
-            padding: 18px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.04);
-            color: #cbd5e1;
-            border: 1px dashed rgba(255, 255, 255, 0.12);
-        }
-
-        .lobby-game-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 14px;
-        }
-
-        .lobby-game-card {
-            width: 100%;
-            text-align: left;
-            border-radius: 18px;
-            padding: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.04);
-            color: #f8fafc;
-            cursor: pointer;
-            transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
-        }
-
-        .lobby-game-card:hover:not(:disabled) {
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(147, 197, 253, 0.4);
-        }
-
-        .lobby-game-card.selected {
-            border-color: rgba(34, 197, 94, 0.5);
-            background: rgba(34, 197, 94, 0.12);
-        }
-
-        .lobby-game-card:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
-        }
-
-        .lobby-game-card-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .lobby-game-icon {
-            font-size: 1.4rem;
-        }
-
-        .lobby-game-tag {
-            font-size: 0.8rem;
-            font-weight: 700;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            color: #cbd5e1;
-        }
-
-        .lobby-game-tag.selected {
-            background: rgba(34, 197, 94, 0.16);
-            color: #86efac;
-        }
-
-        .lobby-game-card h4 {
-            margin: 0 0 8px;
-            font-size: 1.05rem;
-        }
-
-        .lobby-game-card p {
-            margin: 0;
-            color: #cbd5e1;
-            line-height: 1.5;
-            font-size: 0.94rem;
-        }
-
-        .lobby-action-area {
-            margin-top: 18px;
-        }
-
-        .lobby-helper-text {
-            margin: 12px 0 0;
-            color: #cbd5e1;
-            line-height: 1.5;
-            font-size: 0.92rem;
-        }
-
-        .lobby-wait-box {
-            margin-top: 18px;
-            border-radius: 16px;
-            padding: 16px;
-            background: rgba(59, 130, 246, 0.12);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            color: #dbeafe;
-            line-height: 1.5;
-        }
-
-        @media (max-width: 900px) {
-            .lobby-layout-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .lobby-summary-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .lobby-header {
-                flex-direction: column;
-            }
-
-            .lobby-room-tools {
-                width: 100%;
-                align-items: stretch;
-            }
-
-            .lobby-secondary-btn {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .lobby-shell {
-                padding: 16px;
-            }
-
-            .lobby-panel {
-                padding: 18px;
-                border-radius: 18px;
-            }
-
-            .lobby-room-title {
-                font-size: 1.8rem;
-            }
-        }
-    `;
-
+    /* Responsive */
+    @media (max-width: 900px) {
+      .lb-grid { grid-template-columns: 1fr; }
+      .lb-hero { flex-direction: column; }
+      .lb-stats-row { width: 100%; justify-content: center; }
+    }
+    @media (max-width: 640px) {
+      .lb-topbar { padding: 14px 16px; }
+      .lb-hero { padding: 22px 16px 18px; }
+      .lb-grid { padding: 0 16px; }
+      .lb-room-title { font-size: 1.8rem; }
+      .lb-topbar-right { gap: 8px; }
+      .lb-brand-text { display: none; }
+    }
+  `;
   document.head.appendChild(style);
   lobbyStylesMounted = true;
 }
 
 function formatStatus(status) {
   if (!status) return "Unknown";
-
-  const normalized = String(status).toLowerCase();
-
-  if (normalized === "waiting") return "Waiting";
-  if (normalized === "starting") return "Starting";
-  if (normalized === "running") return "Running";
-  if (normalized === "ended") return "Ended";
-
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  const n = String(status).toLowerCase();
+  if (n === "waiting")  return "Waiting";
+  if (n === "starting") return "Starting";
+  if (n === "running")  return "Running";
+  if (n === "ended")    return "Ended";
+  return n.charAt(0).toUpperCase() + n.slice(1);
 }
 
 function getStatusClass(status) {
-  const normalized = String(status || "").toLowerCase();
-
-  if (normalized === "running") return "status-running";
-  if (normalized === "starting") return "status-starting";
-  if (normalized === "ended") return "status-ended";
+  const n = String(status || "").toLowerCase();
+  if (n === "running")  return "status-running";
+  if (n === "starting") return "status-starting";
+  if (n === "ended")    return "status-ended";
   return "status-waiting";
 }
 
