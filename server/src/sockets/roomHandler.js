@@ -1,5 +1,6 @@
 const EVENTS = require("../shared/events");
 const { getGameById } = require("../shared/games");
+
 module.exports = (io, socket, roomManager) => {
   socket.on(EVENTS.ROOM.CREATE, (data = {}) => {
     try {
@@ -56,12 +57,15 @@ module.exports = (io, socket, roomManager) => {
         });
         return;
       }
+
       const gameConfig = getGameById(room.selectedGame);
 
-      if (room.status === "waiting" && gameConfig) {
-        const playerCount = Object.keys(room.players).length;
+      if (room.status === "waiting" && gameConfig && !existingPlayer) {
+        const connectedPlayerCount = Object.values(room.players).filter(
+          (player) => player.connected,
+        ).length;
 
-        if (playerCount >= gameConfig.maxPlayers) {
+        if (connectedPlayerCount >= gameConfig.maxPlayers) {
           socket.emit(EVENTS.ROOM.ERROR, {
             message: "Room is full",
           });

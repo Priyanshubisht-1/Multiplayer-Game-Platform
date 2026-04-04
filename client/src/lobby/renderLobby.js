@@ -16,7 +16,9 @@ export function renderLobby(lobby, isHost) {
   const selectedGameMeta = GAMES.find((g) => g.id === lobby.selectedGame);
   const minPlayers = selectedGameMeta?.minPlayers || 1;
   const maxPlayers = selectedGameMeta?.maxPlayers || Infinity;
-
+  const myPlayerId = localStorage.getItem("playerId");
+  const me = controllers.find((p) => p.id === myPlayerId);
+  const myColor = me?.color || "#4f8aff";
   const canStart =
     isHost &&
     !!lobby.selectedGame &&
@@ -27,10 +29,11 @@ export function renderLobby(lobby, isHost) {
   // Controller list HTML
   const controllersHtml =
     controllers.length > 0
-      ? controllers.map((c) => {
-          const initial = escapeHtml(c.name?.charAt(0)?.toUpperCase() || "C");
-          return `
-            <li class="lc-card">
+      ? controllers
+          .map((c) => {
+            const initial = escapeHtml(c.name?.charAt(0)?.toUpperCase() || "C");
+            return `
+            <li class="lc-card" style="opacity:${c.connected ? 1 : 0.45}">
               <div class="lc-avatar" style="background:${c.color || "#4f8aff"}">
                 ${initial}
               </div>
@@ -42,7 +45,8 @@ export function renderLobby(lobby, isHost) {
                 </span>
               </div>
             </li>`;
-        }).join("")
+          })
+          .join("")
       : `<li class="lc-empty">
            <span>🎮</span>
            <span>No controllers have joined yet</span>
@@ -75,12 +79,12 @@ export function renderLobby(lobby, isHost) {
   const helperMsg = !lobby.selectedGame
     ? "Select a game to continue."
     : connectedCount < (selectedGameMeta?.minPlayers || 1)
-    ? `Need at least ${selectedGameMeta?.minPlayers} connected controllers.`
-    : connectedCount > (selectedGameMeta?.maxPlayers || Infinity)
-    ? `Max ${selectedGameMeta?.maxPlayers} controllers for this game.`
-    : lobby.status === "running"
-    ? "Game is already running."
-    : `Ready to start · ${selectedGameMeta?.minPlayers}–${selectedGameMeta?.maxPlayers} players`;
+      ? `Need at least ${selectedGameMeta?.minPlayers} connected controllers.`
+      : connectedCount > (selectedGameMeta?.maxPlayers || Infinity)
+        ? `Max ${selectedGameMeta?.maxPlayers} controllers for this game.`
+        : lobby.status === "running"
+          ? "Game is already running."
+          : `Ready to start · ${selectedGameMeta?.minPlayers}–${selectedGameMeta?.maxPlayers} players`;
 
   app.innerHTML = `
     <div class="lb-shell">
@@ -108,9 +112,11 @@ export function renderLobby(lobby, isHost) {
           <div class="lb-kicker">Room Lobby</div>
           <h1 class="lb-room-title">Room <span class="lb-room-id">${escapeHtml(lobby.roomId || "")}</span></h1>
           <p class="lb-room-sub">
-            ${isHost
-              ? "This screen is the shared host display. Controllers join from their own devices."
-              : "You're connected as a controller. Wait for the host to start the game."}
+            ${
+              isHost
+                ? "This screen is the shared host display. Controllers join from their own devices."
+                : "You're connected as a controller. Wait for the host to start the game."
+            }
           </p>
         </div>
         <div class="lb-stats-row">
@@ -153,7 +159,9 @@ export function renderLobby(lobby, isHost) {
 
           <div class="lg-grid">${gameCardsHtml}</div>
 
-          ${isHost ? `
+          ${
+            isHost
+              ? `
             <div class="lb-start-area">
               <button
                 id="start-game-btn"
@@ -166,31 +174,46 @@ export function renderLobby(lobby, isHost) {
               </button>
               <p class="lb-helper">${helperMsg}</p>
             </div>
-          ` : `
+          `
+              : `
             <div class="lb-wait-box">
               <span>⏳</span>
               Waiting for the host to choose a game and start the session.
             </div>
-          `}
+          `
+          }
         </section>
 
       </div>
     </div>
   `;
+  if (!isHost && me) {
+    const shell = document.querySelector(".lb-shell");
+
+    if (shell) {
+      shell.style.background = `
+      radial-gradient(circle at top, ${myColor}33, transparent 60%),
+      radial-gradient(circle at bottom, ${myColor}22, transparent 70%),
+      #04050f
+    `;
+    }
+  }
 
   attachSharedHandlers(lobby);
   if (isHost) attachHostHandlers(lobby, connectedCount, canStart);
 }
 
 function attachSharedHandlers(lobby) {
-  document.getElementById("copy-room-btn")?.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(lobby.roomId || "");
-      showLobbyMessage("Room ID copied to clipboard!", "success");
-    } catch {
-      showLobbyMessage("Could not copy room ID.", "error");
-    }
-  });
+  document
+    .getElementById("copy-room-btn")
+    ?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(lobby.roomId || "");
+        showLobbyMessage("Room ID copied to clipboard!", "success");
+      } catch {
+        showLobbyMessage("Could not copy room ID.", "error");
+      }
+    });
 }
 
 function attachHostHandlers(lobby, connectedCount, canStart) {
@@ -206,14 +229,26 @@ function attachHostHandlers(lobby, connectedCount, canStart) {
   if (!startBtn) return;
 
   startBtn.onclick = () => {
-    if (!lobby.selectedGame) { showLobbyMessage("Select a game first.", "error"); return; }
+    if (!lobby.selectedGame) {
+      showLobbyMessage("Select a game first.", "error");
+      return;
+    }
     const meta = GAMES.find((g) => g.id === lobby.selectedGame);
     const min = meta?.minPlayers || 1;
     const max = meta?.maxPlayers || Infinity;
 
-    if (connectedCount < min) { showLobbyMessage(`Need at least ${min} connected controllers.`, "error"); return; }
-    if (connectedCount > max) { showLobbyMessage(`Max ${max} controllers allowed.`, "error"); return; }
-    if (!canStart) { showLobbyMessage("Game cannot be started right now.", "error"); return; }
+    if (connectedCount < min) {
+      showLobbyMessage(`Need at least ${min} connected controllers.`, "error");
+      return;
+    }
+    if (connectedCount > max) {
+      showLobbyMessage(`Max ${max} controllers allowed.`, "error");
+      return;
+    }
+    if (!canStart) {
+      showLobbyMessage("Game cannot be started right now.", "error");
+      return;
+    }
 
     startBtn.disabled = true;
     startBtn.innerHTML = '<span class="lb-start-icon">⏳</span> Starting...';
@@ -625,18 +660,18 @@ function mountLobbyStyles() {
 function formatStatus(status) {
   if (!status) return "Unknown";
   const n = String(status).toLowerCase();
-  if (n === "waiting")  return "Waiting";
+  if (n === "waiting") return "Waiting";
   if (n === "starting") return "Starting";
-  if (n === "running")  return "Running";
-  if (n === "ended")    return "Ended";
+  if (n === "running") return "Running";
+  if (n === "ended") return "Ended";
   return n.charAt(0).toUpperCase() + n.slice(1);
 }
 
 function getStatusClass(status) {
   const n = String(status || "").toLowerCase();
-  if (n === "running")  return "status-running";
+  if (n === "running") return "status-running";
   if (n === "starting") return "status-starting";
-  if (n === "ended")    return "status-ended";
+  if (n === "ended") return "status-ended";
   return "status-waiting";
 }
 

@@ -72,7 +72,6 @@ Multiplayer-Game-Platform/                     # Real-time multiplayer platform 
     │   │   ├── lobby/                        # Room/lobby system (pre-game flow)
     │   │   │   ├── CreateRoom.js             # Host creates room
     │   │   │   ├── JoinRoom.js               # Player joins room
-    │   │   │   ├── PlayerList.js             # Displays connected players
     │   │   │   ├── renderLobby.js            # Lobby orchestration (players + game start)
     │   │   ├── shared/                      # ⚠️ Shared constants (risk if duplicated with server)
     │   │   │   ├── events.js                # Socket event names (must match backend)
